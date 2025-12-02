@@ -1,0 +1,34 @@
+{
+  "name": "autodrive-visual-academy",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "render": "remotion render src/remotion/index.ts MyVideo out/video.mp4 --props=remotion-data.json",
+    "remotion:preview": "remotion preview src/remotion/index.ts --props=remotion-data.json"
+  },
+  "dependencies": {
+    "@google/genai": "^1.30.0",
+    "@remotion/cli": "^4.0.379",
+    "@remotion/player": "^4.0.379",
+    "@remotion/shapes": "^4.0.379",
+    "file-saver": "^2.0.5",
+    "idb": "^8.0.3",
+    "jszip": "^3.10.1",
+    "openai": "^6.9.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "remotion": "^4.0.379"
+  },
+  "devDependencies": {
+    "@types/file-saver": "^2.0.7",
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "https-proxy-agent": "^7.0.6",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}
