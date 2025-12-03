@@ -68,6 +68,16 @@ export const MyComposition: React.FC<MyCompositionProps> = ({ scenes }) => {
         // Transition duration: 0.5 seconds (15 frames at 30fps)
         const transitionFrames = 15;
         
+        // Select transition type based on scene index for variety
+        // First scene: no fade in, others: varied transitions
+        const getTransitionType = (idx: number): 'fade' | 'slide-left' | 'zoom-fade' | 'blur-fade' => {
+          if (idx === 0) return 'fade'; // First scene uses simple fade (no fade in)
+          // Cycle through different transitions for visual variety
+          const transitions: Array<'fade' | 'slide-left' | 'zoom-fade' | 'blur-fade'> = 
+            ['fade', 'slide-left', 'zoom-fade', 'blur-fade'];
+          return transitions[idx % transitions.length];
+        };
+        
         return (
             <Sequence
                 key={scene.id}
@@ -82,6 +92,7 @@ export const MyComposition: React.FC<MyCompositionProps> = ({ scenes }) => {
                     getVideoSrc={getVideoSrc}
                     getAudioSrc={getAudioSrc}
                     transitionFrames={transitionFrames}
+                    transitionType={getTransitionType(index)}
                 />
             </Sequence>
         );
@@ -99,30 +110,92 @@ const SceneContent: React.FC<{
   getVideoSrc: (path: string | undefined) => string | undefined;
   getAudioSrc: (path: string | undefined) => string | undefined;
   transitionFrames: number;
-}> = ({ scene, index, durationFrames, getImageSrc, getVideoSrc, getAudioSrc, transitionFrames }) => {
+  transitionType: 'fade' | 'slide-left' | 'zoom-fade' | 'blur-fade';
+}> = ({ scene, index, durationFrames, getImageSrc, getVideoSrc, getAudioSrc, transitionFrames, transitionType }) => {
   const frame = useCurrentFrame(); // This is relative to the Sequence
   
   return (
     <>
       {/* Visual Layer with Transition */}
-      <FadeTransition durationInFrames={transitionFrames} type="fade">
+      {/* Skip fade in for first scene (index 0) - show immediately */}
+      <FadeTransition 
+        durationInFrames={transitionFrames} 
+        type={transitionType}
+        skipFadeIn={index === 0}
+      >
                     <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center', backgroundColor: 'black' }}>
                         {/* For first scene (index 0), use fixed video file */}
                         {/* Video will automatically loop until Sequence duration (based on audio) ends */}
                         {index === 0 ? (
-                            <Video 
-                                src={staticFile("video/formal.mp4")}
-                                style={{
-                                    width: '100%',
-                                    height: '85%', // Leave space for the caption at the bottom
-                                    objectFit: 'contain',
-                                    position: 'absolute',
-                                    top: 0
-                                }}
-                                // Note: Remotion Video automatically loops within Sequence duration
-                                // The Sequence duration is calculated from audio length, so video will
-                                // loop until audio finishes playing
-                            />
+                            <>
+                                <Video 
+                                    src={staticFile("video/formal.mp4")}
+                                    style={{
+                                        width: '100%',
+                                        height: '85%', // Leave space for the caption at the bottom
+                                        objectFit: 'contain',
+                                        position: 'absolute',
+                                        top: 0
+                                    }}
+                                    // Note: Remotion Video automatically loops within Sequence duration
+                                    // The Sequence duration is calculated from audio length, so video will
+                                    // loop until audio finishes playing
+                                />
+                                {/* Title overlay on blackboard area */}
+                                <AbsoluteFill
+                                    style={{
+                                        display: 'flex',
+                                        justifyContent: 'center', // Center horizontally within blackboard
+                                        alignItems: 'center', // Center vertically within blackboard
+                                        pointerEvents: 'none',
+                                        // Position in the center of the blackboard area
+                                        // Blackboard is in upper-right, roughly from 20% top to 60% top, 55% right to 95% right
+                                        paddingTop: '5%', // Start below cat's head
+                                        paddingBottom: '80%', // End above desk
+                                        paddingLeft: '55%', // Start after cat's body
+                                        paddingRight: '5%', // Leave small margin from right edge
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            color: '#f0f0f0', // Slightly off-white for chalk effect
+                                            fontSize: '65px', // Adjusted for blackboard size
+                                            fontWeight: 'bold',
+                                            fontFamily: '"Comic Sans MS", "Marker Felt", "Arial", sans-serif', // More playful font
+                                            textAlign: 'center', // Center align for blackboard text
+                                            // Multiple text shadows for chalk-like effect
+                                            textShadow: `
+                                                2px 2px 0px rgba(0, 0, 0, 0.9),
+                                                4px 4px 0px rgba(0, 0, 0, 0.7),
+                                                6px 6px 8px rgba(0, 0, 0, 0.5),
+                                                0 0 15px rgba(255, 255, 255, 0.2)
+                                            `,
+                                            // Fade in/out with transition
+                                            opacity: interpolate(
+                                                frame,
+                                                [0, 20, Math.max(0, durationFrames - 20), durationFrames],
+                                                [0, 1, 1, 0],
+                                                {
+                                                    extrapolateLeft: 'clamp',
+                                                    extrapolateRight: 'clamp',
+                                                    easing: Easing.ease
+                                                }
+                                            ),
+                                            // Chalk texture effect
+                                            filter: 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.4))',
+                                            letterSpacing: '4px',
+                                            lineHeight: 1.3,
+                                            maxWidth: '85%',
+                                            wordWrap: 'break-word',
+                                            // Rotate text 30 degrees for dynamic effect
+                                            transform: 'rotate(-5deg)',
+                                            transformOrigin: 'center center',
+                                        }}
+                                    >
+                                        {scene.title}
+                                    </div>
+                                </AbsoluteFill>
+                            </>
                         ) : scene.videoFile ? (
                             // Use video file path if available (for exported projects)
                             <Video 
@@ -194,68 +267,18 @@ const SceneContent: React.FC<{
                     </p>
                 </div>
 
-                        {/* Audio Layer with fade in/out - defaulting to mpeg (mp3) as most AI TTS returns mp3 */}
+                        {/* Audio Layer - defaulting to mpeg (mp3) as most AI TTS returns mp3 */}
                         {scene.audioFile ? (
                             // Use file path if available (for exported projects)
                             <Audio 
                                 src={getAudioSrc(scene.audioFile)}
                                 playbackRate={1.5} // Apply 1.5x speed to match Player preview
-                                volume={(frame) => {
-                                    // Fade in at start (first 15 frames = 0.5s)
-                                    const fadeIn = interpolate(
-                                        frame,
-                                        [0, 15],
-                                        [0, 1],
-                                        {
-                                            extrapolateLeft: 'clamp',
-                                            extrapolateRight: 'clamp',
-                                            easing: Easing.ease
-                                        }
-                                    );
-                                    // Fade out at end (last 15 frames)
-                                    const fadeOut = interpolate(
-                                        frame,
-                                        [Math.max(0, durationFrames - 15), durationFrames],
-                                        [1, 0],
-                                        {
-                                            extrapolateLeft: 'clamp',
-                                            extrapolateRight: 'clamp',
-                                            easing: Easing.ease
-                                        }
-                                    );
-                                    return Math.min(fadeIn, fadeOut);
-                                }}
                             />
                         ) : scene.audioData ? (
                             // Fallback to Base64 data
                             <Audio 
                                 src={`data:audio/mpeg;base64,${scene.audioData}`} 
                                 playbackRate={1.5} // Apply 1.5x speed to match Player preview
-                                volume={(frame) => {
-                                    // Fade in at start (first 15 frames = 0.5s)
-                                    const fadeIn = interpolate(
-                                        frame,
-                                        [0, 15],
-                                        [0, 1],
-                                        {
-                                            extrapolateLeft: 'clamp',
-                                            extrapolateRight: 'clamp',
-                                            easing: Easing.ease
-                                        }
-                                    );
-                                    // Fade out at end (last 15 frames)
-                                    const fadeOut = interpolate(
-                                        frame,
-                                        [Math.max(0, durationFrames - 15), durationFrames],
-                                        [1, 0],
-                                        {
-                                            extrapolateLeft: 'clamp',
-                                            extrapolateRight: 'clamp',
-                                            easing: Easing.ease
-                                        }
-                                    );
-                                    return Math.min(fadeIn, fadeOut);
-                                }}
                             />
                         ) : null}
     </>

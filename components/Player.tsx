@@ -14,7 +14,6 @@ const Player: React.FC<PlayerProps> = ({ scenes, onRestart, bgMusicUrl, topic = 
   const [isPlaying, setIsPlaying] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
-  const gainNodeRef = useRef<GainNode | null>(null); // For audio fade in/out
   const bgmRef = useRef<HTMLAudioElement | null>(null);
   const playTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isFinished, setIsFinished] = useState(false);
@@ -119,7 +118,7 @@ const Player: React.FC<PlayerProps> = ({ scenes, onRestart, bgMusicUrl, topic = 
 
     if (!audioContextRef.current) return;
 
-    // 1. If audio buffer exists, play it with fade in/out
+    // 1. If audio buffer exists, play it directly without fade
     if (scene.audioBuffer) {
         const source = audioContextRef.current.createBufferSource();
         source.buffer = scene.audioBuffer;
@@ -127,31 +126,8 @@ const Player: React.FC<PlayerProps> = ({ scenes, onRestart, bgMusicUrl, topic = 
         // Set playback speed to 1.5x
         source.playbackRate.value = 1.5;
         
-        // Create gain node for fade in/out
-        const gainNode = audioContextRef.current.createGain();
-        gainNodeRef.current = gainNode;
-        
-        // Fade in: 0.5 seconds (500ms)
-        const fadeInDuration = 0.5;
-        const currentTime = audioContextRef.current.currentTime;
-        gainNode.gain.setValueAtTime(0, currentTime);
-        gainNode.gain.linearRampToValueAtTime(1, currentTime + fadeInDuration);
-        
-        // Fade out: 0.5 seconds before end
-        const audioDuration = scene.audioBuffer.duration / 1.5; // Account for 1.5x speed
-        const fadeOutStart = currentTime + audioDuration - 0.5;
-        if (fadeOutStart > currentTime + fadeInDuration && audioDuration > fadeInDuration + 0.5) {
-            gainNode.gain.setValueAtTime(1, fadeOutStart);
-            gainNode.gain.linearRampToValueAtTime(0, currentTime + audioDuration);
-        } else if (audioDuration > fadeInDuration) {
-            // If audio is too short, just fade out from the middle
-            const midPoint = currentTime + audioDuration / 2;
-            gainNode.gain.setValueAtTime(1, midPoint);
-            gainNode.gain.linearRampToValueAtTime(0, currentTime + audioDuration);
-        }
-
-        source.connect(gainNode);
-        gainNode.connect(audioContextRef.current.destination);
+        // Connect directly to destination (no fade in/out)
+        source.connect(audioContextRef.current.destination);
         
         source.onended = () => {
           setIsPlaying(false);
@@ -183,8 +159,13 @@ const Player: React.FC<PlayerProps> = ({ scenes, onRestart, bgMusicUrl, topic = 
 
   useEffect(() => {
     if (currentScene && !isFinished) {
-      // Fade in when scene changes
-      setFadeOpacity(1);
+      // Skip fade in for first scene (index 0) - show immediately
+      if (currentIndex === 0) {
+        setFadeOpacity(1);
+      } else {
+        // Fade in when scene changes (for scenes after first)
+        setFadeOpacity(1);
+      }
       playSceneAudio(currentScene);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -285,14 +266,52 @@ const Player: React.FC<PlayerProps> = ({ scenes, onRestart, bgMusicUrl, topic = 
               style={{ opacity: fadeOpacity }}
             >
               {currentIndex === 0 ? (
-                 <video 
-                    src="/video/1.mp4"
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    className="w-full h-full object-contain"
-                 />
+                 <>
+                    <video 
+                       src="/video/1.mp4"
+                       autoPlay
+                       loop
+                       muted
+                       playsInline
+                       className="w-full h-full object-contain"
+                    />
+                    {/* Title overlay on blackboard area for first scene */}
+                    <div 
+                       className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                       style={{
+                          paddingTop: '22%',
+                          paddingBottom: '40%',
+                          paddingLeft: '55%',
+                          paddingRight: '5%',
+                       }}
+                    >
+                       <div
+                          className="font-bold text-center"
+                          style={{
+                             color: '#f0f0f0', // Slightly off-white for chalk effect
+                             fontSize: 'clamp(32px, 5vw, 70px)',
+                             fontFamily: '"Comic Sans MS", "Marker Felt", "Arial", sans-serif',
+                             // Multiple text shadows for chalk-like effect
+                             textShadow: `
+                                2px 2px 0px rgba(0, 0, 0, 0.9),
+                                4px 4px 0px rgba(0, 0, 0, 0.7),
+                                6px 6px 8px rgba(0, 0, 0, 0.5),
+                                0 0 15px rgba(255, 255, 255, 0.2)
+                             `,
+                             filter: 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.4))',
+                             letterSpacing: '4px',
+                             lineHeight: 1.3,
+                             maxWidth: '85%',
+                             wordWrap: 'break-word',
+                             // Rotate text 30 degrees for dynamic effect
+                             transform: 'rotate(-30deg)',
+                             transformOrigin: 'center center',
+                          }}
+                       >
+                          {currentScene.title}
+                       </div>
+                    </div>
+                 </>
               ) : currentScene.imageData ? (
                  <img 
                     src={`data:image/png;base64,${currentScene.imageData}`} 
