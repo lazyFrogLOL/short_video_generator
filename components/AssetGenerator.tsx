@@ -111,16 +111,24 @@ const AssetGenerator: React.FC<AssetGeneratorProps> = ({ script, imageSize, onCo
       // ---------------------------------------------------------
       // PROCESS 2: Generate Images (Concurrent Batches)
       // Batch size 3, retry 2 times
+      // Skip first scene (index 0) as it uses fixed video
       // ---------------------------------------------------------
       const imageLoop = async () => {
         const BATCH_SIZE = 3;
-        for (let i = 0; i < totalScenes; i += BATCH_SIZE) {
+        // Start from index 1, skip first scene (index 0)
+        for (let i = 1; i < totalScenes; i += BATCH_SIZE) {
           const batch = script.slice(i, i + BATCH_SIZE);
           
           await Promise.all(batch.map(async (scene, index) => {
             const actualIndex = i + index;
             
-            const styleName = (actualIndex === 0 || actualIndex === totalScenes - 1) ? "视觉冲击 (Pop Art)" : "信息图表 (Infographic)";
+            // Skip if somehow we got index 0 (shouldn't happen, but safety check)
+            if (actualIndex === 0) {
+              setImgCount(prev => prev + 1);
+              return;
+            }
+            
+            const styleName = (actualIndex === totalScenes - 1) ? "视觉冲击 (Pop Art)" : "信息图表 (Infographic)";
             setStatus(`正在绘制场景 ${actualIndex + 1}/${totalScenes} [${styleName}]`);
 
             try {
@@ -142,6 +150,11 @@ const AssetGenerator: React.FC<AssetGeneratorProps> = ({ script, imageSize, onCo
                 setImgCount(prev => prev + 1);
             }
           }));
+        }
+        
+        // Mark first scene as processed (no image needed, using fixed video)
+        if (totalScenes > 0) {
+          setImgCount(prev => prev + 1);
         }
       };
 

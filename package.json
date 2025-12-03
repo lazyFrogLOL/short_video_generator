@@ -8,24 +8,35 @@
     "build": "vite build",
     "preview": "vite preview",
     "render": "remotion render src/remotion/index.ts MyVideo out/video.mp4 --props=remotion-data.json",
-    "remotion:preview": "remotion preview src/remotion/index.ts --props=remotion-data.json"
+    "remotion:preview": "remotion preview src/remotion/index.ts --props=remotion-data.json",
+    "fix:remotion": "node fix-remotion-paths.cjs",
+    "clean:remotion": "node clean-remotion-data.cjs"
   },
   "dependencies": {
     "@google/genai": "^1.30.0",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.4.2",
+    "@react-three/postprocessing": "^3.0.4",
     "@remotion/cli": "^4.0.379",
     "@remotion/player": "^4.0.379",
     "@remotion/shapes": "^4.0.379",
     "file-saver": "^2.0.5",
     "idb": "^8.0.3",
     "jszip": "^3.10.1",
+    "lucide-react": "^0.555.0",
     "openai": "^6.9.1",
+    "postprocessing": "^6.38.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "remotion": "^4.0.379"
+    "remotion": "^4.0.379",
+    "three": "^0.181.2",
+    "uuid": "^13.0.0",
+    "zustand": "^5.0.9"
   },
   "devDependencies": {
     "@types/file-saver": "^2.0.7",
     "@types/node": "^22.14.0",
+    "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^5.0.0",
     "https-proxy-agent": "^7.0.6",
     "typescript": "~5.8.2",

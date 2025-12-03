@@ -120,21 +120,41 @@ npm run dev
 
 #### 方法 1: 使用 Remotion CLI（推荐）
 
-1. 确保已生成素材并预览过
-2. 点击"下载项目素材包"获取 `remotion-data.json`
-3. 运行渲染命令：
+1. **导出 Remotion 数据包**
+   - 在播放器页面点击"导出 Remotion 数据包 (含素材文件)"
+   - 下载 ZIP 文件并解压
 
-```bash
-npm run render
-```
+2. **设置文件路径**
+   - 将解压后的 `videos/`、`images/`、`audio/` 文件夹复制到项目的 `public/` 目录
+   - 将 `remotion-data.json` 复制到项目根目录（与 `package.json` 同级）
 
-视频将导出到 `out/video.mp4`
+   ```bash
+   # 解压 ZIP 文件后，在项目根目录执行：
+   cp -r project_name/videos public/
+   cp -r project_name/images public/
+   cp -r project_name/audio public/
+   cp project_name/remotion-data.json .
+   ```
+
+3. **运行渲染命令**
+
+   ```bash
+   npm run render
+   ```
+
+   视频将导出到 `out/video.mp4`
+
+   > **注意**：如果遇到 404 错误，请确保文件在 `public/` 目录下，且路径格式正确（以 `/` 开头，如 `/videos/1.mp4`）
 
 #### 方法 2: 预览 Remotion 组合
 
 ```bash
 npm run remotion:preview
 ```
+
+这会打开 Remotion Studio，你可以在浏览器中预览和调试视频。
+
+> 详细说明请参考 [RENDER_INSTRUCTIONS.md](./RENDER_INSTRUCTIONS.md)
 
 ## 🔧 配置说明
 

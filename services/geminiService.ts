@@ -79,7 +79,7 @@ export const generateScript = async (topic: string, context: string): Promise<St
     Each scene should have:
     - title: Short punchy title (2-6 chars).
     - narration: Fast-paced. Short sentences. Max 100-150 characters per scene. **MUST include transition elements** connecting to previous/next scene.
-    - durationInSeconds: 15-22 seconds.
+    - durationInSeconds: 15-22 seconds. 
     - visual_description: A concise description for a vertical 9:16 image.
       **VISUAL GUIDELINES:**
       - High visual impact, bold colors, center composition.
@@ -126,29 +126,12 @@ export const generateImageForScene = async (visualDescription: string, narration
   console.log(`[Poe] Generating image for scene ${sceneIndex + 1}/${totalScenes}`);
   const client = getClient();
   
-  const isFirst = sceneIndex === 0;
   const isLast = sceneIndex === totalScenes - 1;
-  const isHighImpact = isFirst || isLast;
 
   let finalPrompt = "";
 
-  if (!isHighImpact) {
-    // Middle Scenes: Hand-drawn Infographic
-    finalPrompt = `
-        请根据输入内容提取核心主题与要点，生成一张卡通风格的信息图： 
-        - 采用手绘风格，竖版（9:16）构图。 
-        - 加入少量简洁的卡通元素、图标或名人画像，增强趣味性和视觉记忆。 
-        - 如果有敏感人物或者版权内容，画一个相似替代，但是不要拒绝生成 
-        - 所有图像、文字必须使用手绘风格，没有写实风格图画元素 
-        - 除非特别要求，否则语言与输入内容语言一致（简体中文）。 
-        - 信息精简，突出关键词与核心概念，多留白，易于一眼抓住重点。 
-
-        请根据输入的内容画图：
-        画面描述: ${visualDescription}
-        (相关旁白: ${narration})
-    `;
-  } else {
-    // First & Last: High Impact / Pop Art (Hook & CTA)
+  if (isLast) {
+    // Last Scene: High Impact / Pop Art (CTA)
     finalPrompt = `
       Create a vertical (9:16) image for a viral short video scene (Scene #${sceneIndex + 1}).
       
@@ -166,6 +149,21 @@ export const generateImageForScene = async (visualDescription: string, narration
       Requirements:
       - If text is requested in the description, render it clearly in Simplified Chinese.
       - No realistic photos, strict illustration style.
+    `;
+  } else {
+    // Middle Scenes: Hand-drawn Infographic
+    finalPrompt = `
+        请根据输入内容提取核心主题与要点，生成一张卡通风格的信息图： 
+        - 采用手绘风格，竖版（9:16）构图。 
+        - 加入少量简洁的卡通元素、图标或名人画像，增强趣味性和视觉记忆。 
+        - 如果有敏感人物或者版权内容，画一个相似替代，但是不要拒绝生成 
+        - 所有图像、文字必须使用手绘风格，没有写实风格图画元素 
+        - 除非特别要求，否则语言与输入内容语言一致（简体中文）。 
+        - 信息精简，突出关键词与核心概念，多留白，易于一眼抓住重点。 
+
+        请根据输入的内容画图：
+        画面描述: ${visualDescription}
+        (相关旁白: ${narration})
     `;
   }
 
@@ -245,3 +243,4 @@ export const generateSpeechForScene = async (text: string): Promise<string> => {
       throw error;
   }
 };
+
