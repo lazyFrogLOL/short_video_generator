@@ -53,32 +53,64 @@ export const generateScript = async (topic: string, context: string): Promise<St
     1. **Platform Alignment**: The content must help the platform RETAIN users.
     2. **User-Centric**: Provide EMOTIONAL VALUE and HIGH INFORMATION DENSITY.
     3. **The "Why":** Before generating, ask yourself: "Why would a user finish watching this?" If it's boring, rewrite it.
-    4. **Conflict & Expectation**: Start by BREAKING EXPECTATIONS. Create immediate emotional fluctuation.
+    4. **Authentic Engagement**: The opening should help viewers quickly engage with the content, NOT deceive them with clickbait. Content quality is what truly drives traffic, not extreme hooks.
 
     Target audience: Gen Z & Millennials (Short video platforms).
-    Style: High Energy, Conversational, Vlogger/YouTuber style.
+    Style: Conversational, Engaging, Informative. Like a knowledgeable friend sharing valuable insights.
     Language: Simplified Chinese (Oral/Spoken, use "我们", "你", no formal written style).
     
     Structure the response as a JSON object containing an array of exactly 11 scenes.
     Total duration: Approx 120-180 seconds.
     
+    **CRITICAL: AVOID CLICKBAIT OPENINGS**
+    DO NOT use sensational hooks like:
+    - "99%的人都不知道的秘密" (99% of people don't know this secret)
+    - "这条视频价值百万" (This video is worth millions)
+    - "Everything you know about X is WRONG!"
+    - "Stop doing this!"
+    
+    These are deceptive and constitute short video fraud. Instead, use authentic, value-driven openings.
+    
+    **EFFECTIVE OPENING TYPES (Choose ONE for Scene 1):**
+    1. **Content Preview (内容预告)**: Directly summarize the core value of the video in one sentence.
+       Example: "47年女生和大外孙去网吧的一天" (A 47-year-old woman and her grandson go to an internet cafe for a day)
+    
+    2. **Value Packaging (价值包装)**: Directly convey the core value to satisfy viewers' need for "gain".
+       Example: "看完这条视频你就能无痛的把烟戒掉" (After watching this video, you can quit smoking painlessly)
+    
+    3. **Phenomenon First (现象前置)**: Start with a common social phenomenon or life scenario to enhance viewer resonance.
+       Example: "拉布布的爆火" (The explosion of Labubu), "年轻人不愿意结婚" (Young people don't want to get married)
+    
+    4. **Event Opening (事件开场)**: Directly describe a specific event that happened, often used in vlog-style videos.
+       Example: "那天我出了车祸" (That day I had a car accident)
+       Key: The event must have conflict, as conflict is the core driver for continued viewing.
+    
+    5. **Topic Opening (话题开场)**: Propose a universal topic that can spark widespread discussion.
+       Example: "一个普通人怎样才能做到年入30万，而且是从零开始" (How can an ordinary person earn 300k a year, starting from zero)
+    
+    6. **Direct Address (喊话观众)**: Directly speak to the audience or set interactive instructions.
+       Example: "如果你今年跟我一样，三十几岁还没有结婚的话" (If you're like me this year, in your thirties and not married yet)
+    
+    7. **Hit the Pain Point (直击痛点)**: Target common pain points or needs of the target audience.
+       Example: "养猫会掉毛" (Cats shed), "减肥不掉秤" (Can't lose weight despite dieting)
+    
     Script Structure (The "Viral Retention" Formula):
-    - Scene 1 (The Hook & Conflict): **CRITICAL**: Create conflict or break expectations immediately. (e.g., "Everything you know about X is WRONG!", "Stop doing this!"). Make the user feel something.
-    - Scene 2-4 (The Pain/Agitation): Amplify the conflict. Why does this matter? What is the consequence of ignorance?
-    - Scene 5-10 (The High-Density Value): The Solution/Knowledge. NO FLUFF. Every sentence must deliver new information or emotional impact. Fast pacing.
-    - Scene 11 (The CTA): Summary and "Follow for more".
+    - Scene 1 (The Opening): **CRITICAL**: Use ONE of the 7 effective opening types above. Create genuine engagement through value, resonance, or curiosity - NOT deception. The opening should help viewers quickly engage with the content.
+    - Scene 2-4 (The Context & Development): Build understanding. Why does this matter? What's the background? Develop the topic naturally.
+    - Scene 5-10 (The High-Density Value): The Solution/Knowledge. NO FLUFF. Every sentence must deliver new information or emotional impact. Fast pacing but clear.
+    - Scene 11 (The CTA): Natural summary and "Follow for more".
 
     **CRITICAL: SCENE TRANSITIONS & COHESION**
     Each scene MUST flow naturally into the next. Avoid abrupt topic changes.
-    - **Transition Techniques**: Use connecting phrases like "不仅如此"、"更重要的是"、"接下来"、"但问题是"、"所以"、"其实"、"你知道吗"、"更关键的是" to bridge scenes.
+    - **Transition Techniques**: Use connecting phrases like "不仅如此"、"更重要的是"、"接下来"、"其实"、"你知道吗"、"另外"、"同时"、"所以" to bridge scenes naturally.
     - **Progressive Logic**: Each scene should build on the previous one. Think: "What question does Scene N raise that Scene N+1 answers?"
-    - **Ending Hooks**: Each scene's narration should end with a mini-hook that makes the viewer want to continue (e.g., "但真相是..."、"更惊人的是..."、"接下来...").
-    - **Narrative Arc**: Maintain a clear progression: Problem → Why it matters → Solution Part 1 → Solution Part 2 → ... → Conclusion.
-    - **Avoid**: Sudden topic jumps. Each scene should feel like a natural continuation, not a disconnected segment.
+    - **Ending Hooks**: Each scene's narration should end with a natural transition that makes the viewer want to continue (e.g., "其实还有..."、"更有趣的是..."、"接下来..."、"不仅如此..."). Avoid overly dramatic hooks like "但真相是..." or "更惊人的是..." unless truly warranted.
+    - **Narrative Arc**: Maintain a clear progression: Opening → Context → Value Part 1 → Value Part 2 → ... → Conclusion.
+    - **Avoid**: Sudden topic jumps, clickbait language, or extreme claims. Each scene should feel like a natural continuation, not a disconnected segment.
 
     Each scene should have:
-    - title: Short punchy title (2-6 chars).
-    - narration: Fast-paced. Short sentences. Max 100-150 characters per scene. **MUST include transition elements** connecting to previous/next scene.
+    - title: Short punchy title (2-6 chars). Avoid sensational or clickbait titles.
+    - narration: Natural and conversational. Short sentences. Max 100-150 characters per scene. **MUST include transition elements** connecting to previous/next scene. Use authentic, value-driven language rather than sensational claims.
     - durationInSeconds: 15-22 seconds. 
     - visual_description: A concise description for a vertical 9:16 image.
       **VISUAL GUIDELINES:**
