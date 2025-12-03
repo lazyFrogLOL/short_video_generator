@@ -113,6 +113,50 @@ const SceneContent: React.FC<{
   transitionType: 'fade' | 'slide-left' | 'zoom-fade' | 'blur-fade';
 }> = ({ scene, index, durationFrames, getImageSrc, getVideoSrc, getAudioSrc, transitionFrames, transitionType }) => {
   const frame = useCurrentFrame(); // This is relative to the Sequence
+  const { fps } = useVideoConfig();
+  
+  // Ken Burns Effect: Slow zoom in/out for static images to keep them "breathing"
+  // This prevents the "dead image" feeling in short videos
+  const kenBurnsScale = interpolate(
+    frame,
+    [0, durationFrames],
+    [1, 1.08], // Slowly zoom from 1x to 1.08x (subtle but noticeable)
+    {
+      extrapolateLeft: 'clamp',
+      extrapolateRight: 'clamp',
+      easing: Easing.ease
+    }
+  );
+  
+  // Optional: Add subtle pan effect (can be enabled if needed)
+  // const kenBurnsX = interpolate(
+  //   frame,
+  //   [0, durationFrames],
+  //   [0, 2], // Slight horizontal pan
+  //   { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.ease }
+  // );
+  
+  // Typewriter Effect: Calculate how many characters to show based on current frame
+  // Show text gradually over a longer duration based on text length and scene duration
+  const textLength = scene.narration.length;
+  // Calculate typing duration: 
+  // - Base: 3 seconds minimum, or 80% of scene duration (whichever is longer)
+  // - Add extra time for longer text: 0.1 seconds per character after 20 chars
+  const baseDuration = Math.max(durationFrames * 0.8, fps * 3); // At least 3 seconds or 80% of scene
+  const extraDuration = Math.max(0, (textLength - 20) * fps * 0.1); // 0.1s per char after 20 chars
+  const typewriterDuration = Math.min(baseDuration + extraDuration, durationFrames * 0.95); // Max 95% of scene
+  
+  const charProgress = interpolate(
+    frame,
+    [0, typewriterDuration],
+    [0, textLength],
+    {
+      extrapolateLeft: 'clamp',
+      extrapolateRight: 'clamp',
+      easing: Easing.ease
+    }
+  );
+  const visibleText = scene.narration.substring(0, Math.floor(charProgress));
   
   return (
     <>
@@ -123,7 +167,7 @@ const SceneContent: React.FC<{
         type={transitionType}
         skipFadeIn={index === 0}
       >
-                    <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center', backgroundColor: 'black' }}>
+                    <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center', backgroundColor: 'black', overflow: 'hidden' }}>
                         {/* For first scene (index 0), use fixed video file */}
                         {/* Video will automatically loop until Sequence duration (based on audio) ends */}
                         {index === 0 ? (
@@ -132,8 +176,8 @@ const SceneContent: React.FC<{
                                     src={staticFile("video/formal.mp4")}
                                     style={{
                                         width: '100%',
-                                        height: '85%', // Leave space for the caption at the bottom
-                                        objectFit: 'contain',
+                                        height: '100%', // Full screen display
+                                        objectFit: 'cover',
                                         position: 'absolute',
                                         top: 0
                                     }}
@@ -202,8 +246,8 @@ const SceneContent: React.FC<{
                                 src={getVideoSrc(scene.videoFile)}
                                 style={{
                                     width: '100%',
-                                    height: '85%', // Leave space for the caption at the bottom
-                                    objectFit: 'contain',
+                                    height: '100%', // Full screen display
+                                    objectFit: 'cover',
                                     position: 'absolute',
                                     top: 0
                                 }}
@@ -214,10 +258,13 @@ const SceneContent: React.FC<{
                                 src={getImageSrc(scene.imageFile)}
                                 style={{
                                     width: '100%',
-                                    height: '85%', // Leave space for the caption at the bottom
-                                    objectFit: 'contain',
+                                    height: '100%', // Full screen display
+                                    objectFit: 'cover', // Changed to 'cover' for better Ken Burns effect
                                     position: 'absolute',
-                                    top: 0
+                                    top: 0,
+                                    // Ken Burns Effect: Slow zoom in
+                                    transform: `scale(${kenBurnsScale})`,
+                                    transformOrigin: 'center center'
                                 }}
                             />
                         ) : scene.imageData ? (
@@ -226,10 +273,13 @@ const SceneContent: React.FC<{
                                 src={`data:image/png;base64,${scene.imageData}`} 
                                 style={{
                                     width: '100%',
-                                    height: '85%', // Leave space for the caption at the bottom
-                                    objectFit: 'contain',
+                                    height: '100%', // Full screen display
+                                    objectFit: 'cover', // Changed to 'cover' for better Ken Burns effect
                                     position: 'absolute',
-                                    top: 0
+                                    top: 0,
+                                    // Ken Burns Effect: Slow zoom in
+                                    transform: `scale(${kenBurnsScale})`,
+                                    transformOrigin: 'center center'
                                 }}
                             />
                         ) : (
@@ -240,30 +290,53 @@ const SceneContent: React.FC<{
                     </AbsoluteFill>
                 </FadeTransition>
 
-                {/* Caption Layer (Bottom 10%) */}
+                {/* Caption Layer - Immersive Overlay Style (No black background) */}
                 <div style={{
                     position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '15%', // Slightly larger than 10% for better readability
-                    backgroundColor: '#0f172a', // slate-900
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    padding: '20px',
-                    borderTop: '1px solid #1f2937',
-                    zIndex: 10 // Ensure text is above image
+                    top: '70%', // Positioned at bottom 30% (moved up from bottom edge)
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '90%',
+                    textAlign: 'center',
+                    zIndex: 20, // Ensure text is above image
+                    pointerEvents: 'none' // Don't block interactions
                 }}>
                     <p style={{
-                        color: '#e2e8f0', // slate-200
-                        fontSize: '40px',
-                        fontFamily: 'sans-serif',
-                        textAlign: 'center',
+                        color: '#FFFFFF',
+                        fontSize: '55px', // Larger font size for better visibility
+                        fontWeight: 900, // Extra bold for impact
+                        fontFamily: 'system-ui, -apple-system, sans-serif',
                         margin: 0,
-                        lineHeight: 1.4
+                        lineHeight: 1.2,
+                        // Strong text stroke/shadow to ensure readability on any background
+                        textShadow: `
+                            3px 3px 0 #000,
+                            -1px -1px 0 #000,
+                            1px -1px 0 #000,
+                            -1px 1px 0 #000,
+                            1px 1px 0 #000,
+                            0 0 10px rgba(0, 0, 0, 0.8)
+                        `,
+                        // Additional stroke effect via webkit-text-stroke (if supported)
+                        WebkitTextStroke: '2px #000'
                     }}>
-                        {scene.narration}
+                        {visibleText}
+                        {/* Blinking cursor effect */}
+                        {Math.floor(charProgress) < textLength && (
+                            <span style={{
+                                display: 'inline-block',
+                                width: '4px',
+                                height: '55px',
+                                backgroundColor: '#FFFFFF',
+                                marginLeft: '4px',
+                                opacity: interpolate(
+                                    frame % (fps * 1), // 1 second cycle
+                                    [0, fps * 0.5 - 0.1, fps * 0.5 + 0.1, fps * 1],
+                                    [1, 1, 0, 0],
+                                    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
+                                )
+                            }} />
+                        )}
                     </p>
                 </div>
 

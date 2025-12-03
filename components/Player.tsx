@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Scene } from '../types';
 import { downloadAssetsAsZip, exportRemotionWithAssets } from '../utils/downloadUtils';
+import './Player.css';
 
 interface PlayerProps {
   scenes: Scene[];
@@ -18,6 +19,8 @@ const Player: React.FC<PlayerProps> = ({ scenes, onRestart, bgMusicUrl, topic = 
   const playTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isFinished, setIsFinished] = useState(false);
   const [fadeOpacity, setFadeOpacity] = useState(1); // For visual fade transition
+  const [visibleText, setVisibleText] = useState(''); // For typewriter effect
+  const typewriterIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize Audio Context once
   useEffect(() => {
@@ -157,6 +160,58 @@ const Player: React.FC<PlayerProps> = ({ scenes, onRestart, bgMusicUrl, topic = 
 
   const currentScene = scenes[currentIndex];
 
+  // Typewriter effect: Reset and start typing when scene changes
+  useEffect(() => {
+    // Clear any existing typewriter interval
+    if (typewriterIntervalRef.current) {
+      clearInterval(typewriterIntervalRef.current);
+      typewriterIntervalRef.current = null;
+    }
+    
+    // Reset visible text
+    setVisibleText('');
+    
+    if (currentIndex < scenes.length && !isFinished) {
+      const currentScene = scenes[currentIndex];
+      const text = currentScene.narration;
+      const textLength = text.length;
+      
+      // Calculate typing speed: show text over a longer duration based on text length and scene duration
+      // Base: 3 seconds minimum, or 80% of scene duration (whichever is longer)
+      // Add extra time for longer text: 0.1 seconds per character after 20 chars
+      const sceneDuration = currentScene.actualDuration 
+        ? (currentScene.actualDuration / 1.5) * 1000 // Account for 1.5x playback speed
+        : Math.max(3000, textLength * 200);
+      const baseDuration = Math.max(sceneDuration * 0.8, 3000); // At least 3 seconds or 80% of scene
+      const extraDuration = Math.max(0, (textLength - 20) * 100); // 100ms per char after 20 chars
+      const typewriterDuration = Math.min(baseDuration + extraDuration, sceneDuration * 0.95); // Max 95% of scene
+      const charDelay = Math.max(50, typewriterDuration / textLength); // Min 50ms per char (slower than before)
+      
+      // Start typewriter effect
+      let currentCharIndex = 0;
+      typewriterIntervalRef.current = setInterval(() => {
+        if (currentCharIndex < textLength) {
+          currentCharIndex++;
+          setVisibleText(text.substring(0, currentCharIndex));
+        } else {
+          // Typing complete
+          if (typewriterIntervalRef.current) {
+            clearInterval(typewriterIntervalRef.current);
+            typewriterIntervalRef.current = null;
+          }
+        }
+      }, charDelay);
+    }
+    
+    // Cleanup on unmount or scene change
+    return () => {
+      if (typewriterIntervalRef.current) {
+        clearInterval(typewriterIntervalRef.current);
+        typewriterIntervalRef.current = null;
+      }
+    };
+  }, [currentIndex, scenes, isFinished]);
+
   useEffect(() => {
     if (currentScene && !isFinished) {
       // Skip fade in for first scene (index 0) - show immediately
@@ -273,7 +328,7 @@ const Player: React.FC<PlayerProps> = ({ scenes, onRestart, bgMusicUrl, topic = 
                        loop
                        muted
                        playsInline
-                       className="w-full h-full object-contain"
+                       className="w-full h-full object-cover"
                     />
                     {/* Title overlay on blackboard area for first scene */}
                     <div 
@@ -316,7 +371,10 @@ const Player: React.FC<PlayerProps> = ({ scenes, onRestart, bgMusicUrl, topic = 
                  <img 
                     src={`data:image/png;base64,${currentScene.imageData}`} 
                     alt={currentScene.visual_description}
-                    className="w-full h-full object-contain"
+                    className="w-full h-full object-cover ken-burns-image"
+                    style={{
+                      willChange: 'transform' // Optimize for animation
+                    }}
                  />
               ) : (
                  <div className="w-full h-full flex items-center justify-center">
@@ -326,14 +384,38 @@ const Player: React.FC<PlayerProps> = ({ scenes, onRestart, bgMusicUrl, topic = 
             </div>
         </div>
 
-        {/* --- BOTTOM 10% AREA: NARRATION --- */}
-        <div className="flex-[1] bg-slate-900 border-t border-gray-800 flex flex-col items-center justify-center p-2 relative z-20">
-             {/* Text Content Only - No Control Buttons */}
-             <div className="w-full h-full overflow-y-auto custom-scrollbar flex items-center justify-center px-4">
-                <p className="text-sm leading-snug text-slate-200 font-medium text-center">
-                    {currentScene.narration}
-                </p>
-             </div>
+        {/* --- BOTTOM 10% AREA: NARRATION (Immersive Overlay Style with Typewriter Effect) --- */}
+        <div className="absolute bottom-[30%] left-1/2 transform -translate-x-1/2 w-[90%] text-center z-20 pointer-events-none">
+             <p 
+                className="text-white font-black text-center leading-tight"
+                style={{
+                    fontSize: 'clamp(32px, 4.5vw, 55px)',
+                    fontWeight: 900,
+                    fontFamily: 'system-ui, -apple-system, sans-serif',
+                    textShadow: `
+                        3px 3px 0 #000,
+                        -1px -1px 0 #000,
+                        1px -1px 0 #000,
+                        -1px 1px 0 #000,
+                        1px 1px 0 #000,
+                        0 0 10px rgba(0, 0, 0, 0.8)
+                    `,
+                    WebkitTextStroke: '2px #000'
+                }}
+             >
+                {visibleText || currentScene.narration}
+                {/* Blinking cursor effect */}
+                {visibleText.length < currentScene.narration.length && (
+                    <span 
+                        className="inline-block bg-white ml-1"
+                        style={{
+                            width: '4px',
+                            height: 'clamp(32px, 4.5vw, 55px)',
+                            animation: 'blink 1s infinite'
+                        }}
+                    />
+                )}
+             </p>
         </div>
 
       </div>
