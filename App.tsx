@@ -135,6 +135,12 @@ export default function App() {
     setCompletedScenes([]);
   };
 
+  const handleBackToEdit = () => {
+    // Return to IDLE state to edit topic and description
+    // Keep the script data in case user wants to regenerate
+    setAppState('IDLE');
+  };
+
   if (!hasApiKey) {
       return (
           <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
@@ -313,12 +319,24 @@ export default function App() {
         {appState === 'REVIEW_SCRIPT' && (
           <div className="flex-1 flex flex-col bg-slate-900 overflow-hidden h-screen">
             <header className="bg-slate-800 p-4 border-b border-slate-700 flex justify-between items-center z-10 shadow-md shrink-0">
-               <div>
-                   <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                       <span className="w-2 h-6 bg-blue-500 rounded-full"></span>
-                       脚本审核
-                   </h2>
-                   <p className="text-sm text-gray-400 mt-1">请检查并修改文案与画面描述，确认无误后开始生成素材。</p>
+               <div className="flex items-center gap-4">
+                   <button
+                     onClick={handleBackToEdit}
+                     className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition-all flex items-center gap-2"
+                     title="返回编辑标题和文案"
+                   >
+                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                     </svg>
+                     <span>返回</span>
+                   </button>
+                   <div>
+                       <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                           <span className="w-2 h-6 bg-blue-500 rounded-full"></span>
+                           脚本审核
+                       </h2>
+                       <p className="text-sm text-gray-400 mt-1">请检查并修改文案与画面描述，确认无误后开始生成素材。</p>
+                   </div>
                </div>
                <button
                  onClick={handleConfirmScript}

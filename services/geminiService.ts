@@ -59,14 +59,14 @@ export const generateScript = async (topic: string, context: string): Promise<St
     Style: High Energy, Conversational, Vlogger/YouTuber style.
     Language: Simplified Chinese (Oral/Spoken, use "我们", "你", no formal written style).
     
-    Structure the response as a JSON object containing an array of exactly 15 scenes.
+    Structure the response as a JSON object containing an array of exactly 11 scenes.
     Total duration: Approx 120-180 seconds.
     
     Script Structure (The "Viral Retention" Formula):
     - Scene 1 (The Hook & Conflict): **CRITICAL**: Create conflict or break expectations immediately. (e.g., "Everything you know about X is WRONG!", "Stop doing this!"). Make the user feel something.
-    - Scene 2-5 (The Pain/Agitation): Amplify the conflict. Why does this matter? What is the consequence of ignorance?
-    - Scene 6-14 (The High-Density Value): The Solution/Knowledge. NO FLUFF. Every sentence must deliver new information or emotional impact. Fast pacing.
-    - Scene 15 (The CTA): Summary and "Follow for more".
+    - Scene 2-4 (The Pain/Agitation): Amplify the conflict. Why does this matter? What is the consequence of ignorance?
+    - Scene 5-10 (The High-Density Value): The Solution/Knowledge. NO FLUFF. Every sentence must deliver new information or emotional impact. Fast pacing.
+    - Scene 11 (The CTA): Summary and "Follow for more".
 
     **CRITICAL: SCENE TRANSITIONS & COHESION**
     Each scene MUST flow naturally into the next. Avoid abrupt topic changes.
@@ -215,11 +215,14 @@ export const generateSpeechForScene = async (text: string): Promise<string> => {
   // Clean text for TTS: Replace common symbols that might be read out
   // Keep alphanumeric, chinese, and basic punctuation (,.?!:;)
   const cleanedText = text.replace(/[^\u4e00-\u9fa5a-zA-Z0-9\s,，.。?？!！:：;；]/g, ' ');
+  
+  // Add [medium pause] at the end of narration for a pause between scenes
+  const textWithPause = `${cleanedText} [medium pause]。`;
 
   try {
       const chat = await client.chat.completions.create({
         model: "gemini-2.5-pro-tts",
-        messages: [{role: "user", content: cleanedText}]
+        messages: [{role: "user", content: textWithPause}]
       });
 
       const content = chat.choices[0].message.content || "";
