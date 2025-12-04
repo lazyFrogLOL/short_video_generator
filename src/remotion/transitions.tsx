@@ -29,7 +29,7 @@ interface FadeTransitionProps {
  */
 export const FadeTransition: React.FC<FadeTransitionProps> = ({ 
   children, 
-  durationInFrames = 15, // 0.5 seconds at 30fps
+  durationInFrames = 30, // 1 second at 30fps (increased for smoother transitions)
   type = 'fade',
   skipFadeIn = false // Default to false, enable fade in
 }) => {
@@ -37,6 +37,7 @@ export const FadeTransition: React.FC<FadeTransitionProps> = ({
   const { durationInFrames: sceneDuration } = useVideoConfig();
   
   // Calculate opacity for fade in at start and fade out at end
+  // Use smoother easing functions for more natural transitions
   const fadeInOpacity = skipFadeIn 
     ? 1 // Skip fade in, start at full opacity
     : interpolate(
@@ -46,7 +47,7 @@ export const FadeTransition: React.FC<FadeTransitionProps> = ({
         {
           extrapolateLeft: 'clamp',
           extrapolateRight: 'clamp',
-          easing: Easing.ease
+          easing: Easing.out(Easing.cubic) // Smoother easing for fade in
         }
       );
   
@@ -57,7 +58,7 @@ export const FadeTransition: React.FC<FadeTransitionProps> = ({
     {
       extrapolateLeft: 'clamp',
       extrapolateRight: 'clamp',
-      easing: Easing.ease
+      easing: Easing.in(Easing.cubic) // Smoother easing for fade out
     }
   );
   
@@ -103,21 +104,29 @@ export const FadeTransition: React.FC<FadeTransitionProps> = ({
     );
   }
   
-  // Zoom effects
+  // Zoom effects with smoother easing and subtler scale
   let scale = 1;
   if (type === 'zoom-in' || type === 'zoom-fade') {
     scale = interpolate(
       transitionProgress,
       [0, 1],
-      [1.15, 1],
-      { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.out(Easing.cubic) }
+      [1.05, 1], // Reduced zoom for subtler effect (was 1.15)
+      { 
+        extrapolateLeft: 'clamp', 
+        extrapolateRight: 'clamp', 
+        easing: Easing.out(Easing.cubic) // Smoother zoom
+      }
     );
   } else if (type === 'zoom-out') {
     scale = interpolate(
       transitionProgress,
       [0, 1],
-      [0.85, 1],
-      { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.out(Easing.cubic) }
+      [0.95, 1], // Reduced zoom for subtler effect (was 0.85)
+      { 
+        extrapolateLeft: 'clamp', 
+        extrapolateRight: 'clamp', 
+        easing: Easing.out(Easing.cubic)
+      }
     );
   }
   
@@ -132,13 +141,17 @@ export const FadeTransition: React.FC<FadeTransitionProps> = ({
     );
   }
   
-  // Blur effect (for blur-fade)
+  // Blur effect (for blur-fade) with smoother easing and subtler blur
   const blur = type === 'blur-fade'
     ? interpolate(
         transitionProgress,
         [0, 1],
-        [10, 0],
-        { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.out(Easing.cubic) }
+        [8, 0], // Reduced blur for subtler effect (was 10)
+        { 
+          extrapolateLeft: 'clamp', 
+          extrapolateRight: 'clamp', 
+          easing: Easing.out(Easing.cubic) // Smoother blur transition
+        }
       )
     : 0;
   

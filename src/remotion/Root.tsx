@@ -17,7 +17,8 @@ export const RemotionRoot: React.FC = () => {
 
   // Calculate total duration based on scenes
   const fps = 30;
-  const totalDurationInSeconds = scenes.reduce((acc, scene) => {
+  const CHAPTER_TITLE_DURATION = 1.0; // 1.0 seconds per chapter title drop
+  const totalDurationInSeconds = scenes.reduce((acc, scene, index) => {
     // Important: Duration must account for playback speed (1.5x)
     // actualDuration is the raw audio length. 
     // If we play at 1.5x speed, the visible duration is raw / 1.5
@@ -25,7 +26,10 @@ export const RemotionRoot: React.FC = () => {
     const playbackSpeed = 1.5;
     const effectiveDuration = rawDuration / playbackSpeed;
     
-    return acc + effectiveDuration;
+    // Add chapter title drop duration for all scenes except the first one
+    const chapterTitleDuration = index > 0 ? CHAPTER_TITLE_DURATION : 0;
+    
+    return acc + effectiveDuration + chapterTitleDuration;
   }, 0);
   
   // Ensure at least 1 frame to avoid errors if empty

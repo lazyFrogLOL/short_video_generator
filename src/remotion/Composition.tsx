@@ -2,6 +2,7 @@ import React from 'react';
 import { AbsoluteFill, Audio, Img, Sequence, useVideoConfig, staticFile, Video, useCurrentFrame, interpolate, Easing } from 'remotion';
 import { Scene } from '../../types';
 import { FadeTransition } from './transitions';
+import { ChapterTitleDrop } from './ChapterTitleDrop';
 
 interface MyCompositionProps {
   scenes: Scene[];
@@ -47,55 +48,100 @@ export const MyComposition: React.FC<MyCompositionProps> = ({ scenes }) => {
     return path;
   };
 
+  // Chapter title drop duration: 1.0 seconds (reduced for faster pacing)
+  const CHAPTER_TITLE_DURATION = fps * 1.0;
+  
+  // Pre-calculate all scene start frames to avoid closure issues in map
+  let frameCounter = 0;
+  const sceneTimings = scenes.map((scene, index) => {
+    const rawDuration = scene.actualDuration || scene.durationInSeconds || 5;
+    const playbackSpeed = 1.5;
+    const effectiveDuration = rawDuration / playbackSpeed;
+    const durationFrames = Math.ceil(effectiveDuration * fps);
+    
+    let chapterTitleStartFrame: number | null = null;
+    let sceneStartFrame: number;
+    
+    if (index === 0) {
+      // First scene: no chapter title drop
+      sceneStartFrame = frameCounter;
+      frameCounter += durationFrames;
+    } else {
+      // Other scenes: chapter title drop first
+      chapterTitleStartFrame = frameCounter;
+      sceneStartFrame = frameCounter + CHAPTER_TITLE_DURATION;
+      frameCounter = sceneStartFrame + durationFrames;
+    }
+    
+    return {
+      scene,
+      index,
+      durationFrames,
+      chapterTitleStartFrame,
+      sceneStartFrame
+    };
+  });
+  
   return (
     <AbsoluteFill style={{ backgroundColor: 'black' }}>
-      {scenes.map((scene, index) => {
-        // Determine duration for this scene
-        // Prioritize actualDuration (from audio decoding), fallback to estimation
-        // IMPORTANT: For scene 0 (first scene), duration is based on audio length
-        // The fixed video (formal.mp4) will loop automatically until audio finishes
-        const rawDuration = scene.actualDuration || scene.durationInSeconds || 5;
+      {sceneTimings.map((timing) => {
+        const { scene, index, durationFrames, chapterTitleStartFrame, sceneStartFrame } = timing;
         
-        // Adjust duration for 1.5x playback speed
-        const playbackSpeed = 1.5;
-        const effectiveDuration = rawDuration / playbackSpeed;
-        
-        const durationFrames = Math.ceil(effectiveDuration * fps);
-        
-        const startFrame = currentFrame;
-        currentFrame += durationFrames;
-
-        // Transition duration: 0.5 seconds (15 frames at 30fps)
-        const transitionFrames = 15;
-        
-        // Select transition type based on scene index for variety
-        // First scene: no fade in, others: varied transitions
-        const getTransitionType = (idx: number): 'fade' | 'slide-left' | 'zoom-fade' | 'blur-fade' => {
-          if (idx === 0) return 'fade'; // First scene uses simple fade (no fade in)
-          // Cycle through different transitions for visual variety
-          const transitions: Array<'fade' | 'slide-left' | 'zoom-fade' | 'blur-fade'> = 
-            ['fade', 'slide-left', 'zoom-fade', 'blur-fade'];
-          return transitions[idx % transitions.length];
-        };
-        
-        return (
-            <Sequence
-                key={scene.id}
-                from={startFrame}
-                durationInFrames={durationFrames}
-            >
-                <SceneContent 
-                    scene={scene}
-                    index={index}
-                    durationFrames={durationFrames}
-                    getImageSrc={getImageSrc}
-                    getVideoSrc={getVideoSrc}
-                    getAudioSrc={getAudioSrc}
-                    transitionFrames={transitionFrames}
-                    transitionType={getTransitionType(index)}
+        // Insert chapter title drop before each scene (except the first one)
+        if (index > 0 && chapterTitleStartFrame !== null) {
+          return (
+            <React.Fragment key={`scene-${index}`}>
+              {/* Chapter Title Drop Sequence */}
+              <Sequence
+                from={chapterTitleStartFrame}
+                durationInFrames={CHAPTER_TITLE_DURATION}
+              >
+                <ChapterTitleDrop 
+                  title={scene.title}
+                  sceneIndex={index}
                 />
+              </Sequence>
+              
+              {/* Scene Content Sequence */}
+              <Sequence
+                key={scene.id}
+                from={sceneStartFrame}
+                durationInFrames={durationFrames}
+              >
+                <SceneContent 
+                  scene={scene}
+                  index={index}
+                  durationFrames={durationFrames}
+                  getImageSrc={getImageSrc}
+                  getVideoSrc={getVideoSrc}
+                  getAudioSrc={getAudioSrc}
+                  transitionFrames={30} // Increased to 1 second for smoother transitions
+                  transitionType={index % 4 === 0 ? 'fade' : index % 4 === 1 ? 'slide-left' : index % 4 === 2 ? 'zoom-fade' : 'blur-fade'}
+                />
+              </Sequence>
+            </React.Fragment>
+          );
+        } else {
+          // First scene: no chapter title drop
+          return (
+            <Sequence
+              key={scene.id}
+              from={sceneStartFrame}
+              durationInFrames={durationFrames}
+            >
+              <SceneContent 
+                scene={scene}
+                index={index}
+                durationFrames={durationFrames}
+                getImageSrc={getImageSrc}
+                getVideoSrc={getVideoSrc}
+                getAudioSrc={getAudioSrc}
+                transitionFrames={30} // Increased to 1 second for smoother transitions
+                transitionType="fade"
+              />
             </Sequence>
-        );
+          );
+        }
       })}
     </AbsoluteFill>
   );
