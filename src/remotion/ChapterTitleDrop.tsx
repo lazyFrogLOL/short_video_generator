@@ -11,15 +11,15 @@ export const ChapterTitleDrop: React.FC<ChapterTitleDropProps> = ({ title, scene
   const { fps } = useVideoConfig();
   
   // Timeline:
-  // 0.0s - 0.3s: Black screen (reduced for faster transition)
+  // 0.0s - 0.3s: Black screen
   // 0.1s - 0.4s: Title drops down
-  // 0.6s - 1.0s: Fade out smoothly (prepare for next scene)
-  const BLACK_SCREEN_DURATION = fps * 0.3; // 0.3 seconds (reduced)
+  // 0.6s - 1.5s: Fade out smoothly (prepare for next scene)
+  const BLACK_SCREEN_DURATION = fps * 0.3; // 0.3 seconds
   const TITLE_DROP_START = fps * 0.1; // Start at 0.1s
-  const TITLE_DROP_DURATION = fps * 0.3; // Takes 0.3s (faster)
-  const FADE_OUT_START = fps * 0.6; // Start fading out at 0.6s (earlier)
-  const FADE_OUT_DURATION = fps * 0.4; // Fade out takes 0.4s (smoother)
-  const TOTAL_DURATION = fps * 1.0; // Total 1.0 seconds (reduced for faster pacing)
+  const TITLE_DROP_DURATION = fps * 0.3; // Takes 0.3s
+  const FADE_OUT_START = fps * 0.8; // Start fading out at 0.8s (give more time to see the title)
+  const FADE_OUT_DURATION = fps * 0.7; // Fade out takes 0.7s (smoother)
+  const TOTAL_DURATION = fps * 1.5; // Total 1.5 seconds (increased for better visibility)
   
   // Spring animation for title drop (heavy impact effect)
   const dropAnimation = spring({
@@ -109,7 +109,7 @@ export const ChapterTitleDrop: React.FC<ChapterTitleDropProps> = ({ title, scene
       <Audio 
         src={staticFile("heavy_impact.mp3")}
         startFrom={0}
-        volume={0.8}
+        volume={1}
       />
     </AbsoluteFill>
   );

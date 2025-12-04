@@ -22,6 +22,7 @@ export const exportRemotionWithAssets = async (scenes: Scene[], topic: string = 
   const imgFolder = folder.folder("images");
   const videoFolder = folder.folder("videos");
   const audioFolder = folder.folder("audio");
+  const openingImgFolder = folder.folder("opening-images");
 
   // Process scenes: save assets and create modified scene data with file paths
   const modifiedScenes = scenes.map((scene) => {
@@ -34,6 +35,15 @@ export const exportRemotionWithAssets = async (scenes: Scene[], topic: string = 
     delete sceneCopy.imageData;  // Remove Base64 image data
     delete sceneCopy.audioData;  // Remove Base64 audio data
     
+    // Save scene video (for scene 2) as file and update reference
+    if (scene.sceneVideoData && videoFolder) {
+      const sceneVideoFileName = `${scene.id + 1}_scene.mp4`;
+      videoFolder.file(sceneVideoFileName, scene.sceneVideoData, { base64: true });
+      // Use absolute path for Remotion (starts with /) to access public directory
+      sceneCopy.sceneVideoFile = `/videos/${sceneVideoFileName}`;
+      // Remove Base64 data
+      delete sceneCopy.sceneVideoData;
+    }
     
     // Save image as file and update reference
     if (scene.imageData && imgFolder) {
@@ -41,6 +51,20 @@ export const exportRemotionWithAssets = async (scenes: Scene[], topic: string = 
       imgFolder.file(imageFileName, scene.imageData, { base64: true });
       // Use absolute path for Remotion (starts with /) to access public directory
       sceneCopy.imageFile = `/images/${imageFileName}`;
+    }
+    
+    // Save opening images as files and update reference
+    if (scene.openingImages && scene.openingImages.length > 0 && openingImgFolder) {
+      const openingImageFiles: string[] = [];
+      scene.openingImages.forEach((imageData, index) => {
+        const openingImageFileName = `${scene.id + 1}_opening_${index + 1}.png`;
+        openingImgFolder.file(openingImageFileName, imageData, { base64: true });
+        // Use absolute path for Remotion (starts with /) to access public directory
+        openingImageFiles.push(`/opening-images/${openingImageFileName}`);
+      });
+      sceneCopy.openingImageFiles = openingImageFiles;
+      // Remove Base64 data
+      delete sceneCopy.openingImages;
     }
     
     // Save audio as file and update reference
@@ -94,12 +118,26 @@ export const downloadAssetsAsZip = async (scenes: Scene[], topic: string = "vide
   // 3. Add Assets
   const imgFolder = folder.folder("images");
   const audioFolder = folder.folder("audio");
+  const openingImgFolder = folder.folder("opening-images");
+  const videoFolder = folder.folder("videos");
 
   scenes.forEach((scene) => {
     // Images
     if (scene.imageData && imgFolder) {
       // Base64 string to Blob
       imgFolder.file(`${scene.id + 1}.png`, scene.imageData, { base64: true });
+    }
+
+    // Opening Images
+    if (scene.openingImages && scene.openingImages.length > 0 && openingImgFolder) {
+      scene.openingImages.forEach((imageData, index) => {
+        openingImgFolder.file(`${scene.id + 1}_opening_${index + 1}.png`, imageData, { base64: true });
+      });
+    }
+
+    // Scene Video (for scene 2)
+    if (scene.sceneVideoData && videoFolder) {
+      videoFolder.file(`${scene.id + 1}_scene.mp4`, scene.sceneVideoData, { base64: true });
     }
 
     // Audio

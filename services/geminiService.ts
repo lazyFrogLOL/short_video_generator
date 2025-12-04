@@ -59,7 +59,7 @@ export const generateScript = async (topic: string, context: string): Promise<St
     Style: Conversational, Engaging, Informative. Like a knowledgeable friend sharing valuable insights.
     Language: Simplified Chinese (Oral/Spoken, use "我们", "你", no formal written style).
     
-    Structure the response as a JSON object containing an array of exactly 11 scenes.
+    Structure the response as a JSON object containing an array of exactly 10 scenes.
     Total duration: Approx 120-180 seconds.
     
     **CRITICAL: AVOID CLICKBAIT OPENINGS**
@@ -96,9 +96,9 @@ export const generateScript = async (topic: string, context: string): Promise<St
     
     Script Structure (The "Viral Retention" Formula):
     - Scene 1 (The Opening): **CRITICAL**: Use ONE of the 7 effective opening types above. Create genuine engagement through value, resonance, or curiosity - NOT deception. The opening should help viewers quickly engage with the content.
-    - Scene 2-4 (The Context & Development): Build understanding. Why does this matter? What's the background? Develop the topic naturally.
-    - Scene 5-10 (The High-Density Value): The Solution/Knowledge. NO FLUFF. Every sentence must deliver new information or emotional impact. Fast pacing but clear.
-    - Scene 11 (The CTA): Natural summary and "Follow for more".
+    - Scene 2-3 (The Context & Development): Build understanding. Why does this matter? What's the background? Develop the topic naturally.
+    - Scene 4-9 (The High-Density Value): The Solution/Knowledge. NO FLUFF. Every sentence must deliver new information or emotional impact. Fast pacing but clear.
+    - Scene 10 (The CTA): Natural summary and "Follow for more".
 
     **CRITICAL: SCENE TRANSITIONS & COHESION**
     Each scene MUST flow naturally into the next. Avoid abrupt topic changes.
@@ -276,6 +276,107 @@ export const generateSpeechForScene = async (text: string): Promise<string> => {
   } catch (error) {
       console.error("[Poe] generateSpeechForScene error:", error);
       throw error;
+  }
+};
+
+export const generateOpeningImages = async (narration: string): Promise<string[]> => {
+  console.log(`[Poe] Generating 3 opening images based on narration`);
+  const client = getClient();
+  
+  const prompt = `一张超写实的照片，
+
+${narration}
+  
+不要文字。
+`;
+
+  const images: string[] = [];
+  
+  // Generate 3 images sequentially
+  for (let i = 0; i < 3; i++) {
+    try {
+      console.log(`[Poe] Generating opening image ${i + 1}/3`);
+      const chat = await client.chat.completions.create({
+        model: "nano-banana",
+        messages: [{role: "user", content: prompt}],
+        extra_body: {
+          "aspect_ratio": "16:9",
+          "image_only": true
+        }
+      } as any);
+
+      const content = chat.choices[0].message.content || "";
+      
+      // Extract URL from markdown or raw text
+      const urlRegex = /https?:\/\/[^\s\)]+/g;
+      const matches = content.match(urlRegex);
+      
+      if (!matches || matches.length === 0) {
+        console.error(`No image URL found in response for image ${i + 1}:`, content);
+        throw new Error(`No image URL found in response for image ${i + 1}`);
+      }
+      
+      const imageUrl = matches[0];
+      console.log(`[Poe] Opening image ${i + 1} URL found: ${imageUrl}`);
+      
+      const base64Image = await fetchResourceAsBase64(imageUrl);
+      images.push(base64Image);
+      console.log(`[Poe] Opening image ${i + 1} downloaded and converted`);
+    } catch (error: any) {
+      console.error(`[Poe] generateOpeningImages error (Image ${i + 1}):`, error);
+      if (error.response) {
+        console.error("[Poe] Error Response Body:", error.response.data);
+      }
+      // Continue with other images even if one fails
+      throw error;
+    }
+  }
+  
+  return images;
+};
+
+export const generateSceneVideo = async (narration: string, visualDescription: string): Promise<string> => {
+  console.log(`[Poe] Generating video for scene 2`);
+  const client = getClient();
+  
+  const prompt = `${narration}
+
+不要出现任何文字。超写实电影拉长景深效果。
+`;
+
+  try {
+    const chat = await client.chat.completions.create({
+      model: "kling-2.5-turbo-pro",
+      messages: [{role: "user", content: prompt}],
+      extra_body: {
+        "aspect": "9:16",
+        "negative_prompt": "blur, distort, and low quality, real words, characters"
+      }
+    } as any);
+
+    const content = chat.choices[0].message.content || "";
+    
+    // Extract URL from markdown or raw text
+    const urlRegex = /https?:\/\/[^\s\)]+/g;
+    const matches = content.match(urlRegex);
+    
+    if (!matches || matches.length === 0) {
+      console.error("No video URL found in response:", content);
+      throw new Error("No video URL found in response");
+    }
+    
+    const videoUrl = matches[0];
+    console.log(`[Poe] Scene video URL found: ${videoUrl}`);
+    
+    const base64Video = await fetchResourceAsBase64(videoUrl);
+    console.log(`[Poe] Scene video downloaded and converted`);
+    return base64Video;
+  } catch (error: any) {
+    console.error(`[Poe] generateSceneVideo error:`, error);
+    if (error.response) {
+      console.error("[Poe] Error Response Body:", error.response.data);
+    }
+    throw error;
   }
 };
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Scene, ImageSize } from '../types';
-import { generateImageForScene, generateSpeechForScene } from '../services/geminiService';
+import { generateImageForScene, generateSpeechForScene, generateOpeningImages, generateSceneVideo } from '../services/geminiService';
 import { saveCurrentProject } from '../utils/storageUtils';
 import { decodeBase64, decodeAudioData, createWavFile, uint8ArrayToBase64 } from '../utils/audioUtils';
 
@@ -64,6 +64,44 @@ const AssetGenerator: React.FC<AssetGeneratorProps> = ({ script, imageSize, onCo
                   setTimeout(safeSave, 500); 
               }
           }
+      };
+
+      // ---------------------------------------------------------
+      // PROCESS 0: Generate Opening Images (for scene 0)
+      // Generate 3 images based on first scene narration
+      // ---------------------------------------------------------
+      const generateOpening = async () => {
+        if (totalScenes > 0 && script[0]) {
+          try {
+            setStatus("正在生成开场图片...");
+            const openingImages = await generateOpeningImages(script[0].narration);
+            results[0].openingImages = openingImages;
+            safeSave();
+            console.log("Opening images generated successfully");
+          } catch (error) {
+            console.error("Failed to generate opening images:", error);
+            // Non-blocking error, continue with other assets
+          }
+        }
+      };
+
+      // ---------------------------------------------------------
+      // PROCESS 0.5: Generate Scene Video (for scene 1)
+      // Generate video for second scene using kling-2.5-turbo-pro
+      // ---------------------------------------------------------
+      const generateScene2Video = async () => {
+        if (totalScenes > 1 && script[1]) {
+          try {
+            setStatus("正在生成场景2视频...");
+            const videoData = await generateSceneVideo(script[1].narration, script[1].visual_description);
+            results[1].sceneVideoData = videoData;
+            safeSave();
+            console.log("Scene 2 video generated successfully");
+          } catch (error) {
+            console.error("Failed to generate scene 2 video:", error);
+            // Non-blocking error, continue with other assets
+          }
+        }
       };
 
       // ---------------------------------------------------------
@@ -158,7 +196,9 @@ const AssetGenerator: React.FC<AssetGeneratorProps> = ({ script, imageSize, onCo
         }
       };
 
-      // Execute both flows concurrently (but internally sequential)
+      // Execute all flows: opening images first, then scene 2 video, then audio and images concurrently
+      await generateOpening();
+      await generateScene2Video();
       await Promise.all([audioLoop(), imageLoop()]);
 
       // VALIDATION: Check if we have at least some data

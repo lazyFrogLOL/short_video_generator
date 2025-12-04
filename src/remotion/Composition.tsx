@@ -48,8 +48,8 @@ export const MyComposition: React.FC<MyCompositionProps> = ({ scenes }) => {
     return path;
   };
 
-  // Chapter title drop duration: 1.0 seconds (reduced for faster pacing)
-  const CHAPTER_TITLE_DURATION = fps * 1.0;
+  // Chapter title drop duration: 1.5 seconds (increased for better visibility)
+  const CHAPTER_TITLE_DURATION = fps * 1.5;
   
   // Pre-calculate all scene start frames to avoid closure issues in map
   let frameCounter = 0;
@@ -57,7 +57,9 @@ export const MyComposition: React.FC<MyCompositionProps> = ({ scenes }) => {
     const rawDuration = scene.actualDuration || scene.durationInSeconds || 5;
     const playbackSpeed = 1.5;
     const effectiveDuration = rawDuration / playbackSpeed;
-    const durationFrames = Math.ceil(effectiveDuration * fps);
+    // Add a small buffer (0.2 seconds) to ensure audio completes playback
+    // This accounts for audio decoding precision and playback timing issues
+    const durationFrames = Math.ceil((effectiveDuration + 0.2) * fps);
     
     let chapterTitleStartFrame: number | null = null;
     let sceneStartFrame: number;
@@ -231,61 +233,239 @@ const SceneContent: React.FC<{
                                     // The Sequence duration is calculated from audio length, so video will
                                     // loop until audio finishes playing
                                 />
-                                {/* Title overlay on blackboard area */}
-                                <AbsoluteFill
-                                    style={{
-                                        display: 'flex',
-                                        justifyContent: 'center', // Center horizontally within blackboard
-                                        alignItems: 'center', // Center vertically within blackboard
-                                        pointerEvents: 'none',
-                                        // Position in the center of the blackboard area
-                                        // Blackboard is in upper-right, roughly from 20% top to 60% top, 55% right to 95% right
-                                        paddingTop: '5%', // Start below cat's head
-                                        paddingBottom: '80%', // End above desk
-                                        paddingLeft: '55%', // Start after cat's body
-                                        paddingRight: '5%', // Leave small margin from right edge
-                                    }}
-                                >
-                                    <div
+                                
+                                {/* Opening Images Carousel */}
+                                {(() => {
+                                  // Support both Base64 (openingImages) and file paths (openingImageFiles)
+                                  const openingImages = scene.openingImageFiles || scene.openingImages;
+                                  if (!openingImages || openingImages.length === 0) return null;
+                                  
+                                  const delayFrames = fps * 2; // 2 second delay before starting
+                                  const imageDuration = fps * 2; // 2 second per image
+                                  const fadeFrames = fps * 0.3; // 0.3 second fade transition
+                                  
+                                  return (
+                                    <>
+                                      {/* Image container positioned at 1/3 from top, 16:9 aspect ratio */}
+                                      <AbsoluteFill
                                         style={{
-                                            color: '#f0f0f0', // Slightly off-white for chalk effect
-                                            fontSize: '65px', // Adjusted for blackboard size
-                                            fontWeight: 'bold',
-                                            fontFamily: '"Comic Sans MS", "Marker Felt", "Arial", sans-serif', // More playful font
-                                            textAlign: 'center', // Center align for blackboard text
-                                            // Multiple text shadows for chalk-like effect
-                                            textShadow: `
-                                                2px 2px 0px rgba(0, 0, 0, 0.9),
-                                                4px 4px 0px rgba(0, 0, 0, 0.7),
-                                                6px 6px 8px rgba(0, 0, 0, 0.5),
-                                                0 0 15px rgba(255, 255, 255, 0.2)
-                                            `,
-                                            // Fade in/out with transition
-                                            opacity: interpolate(
-                                                frame,
-                                                [0, 20, Math.max(0, durationFrames - 20), durationFrames],
-                                                [0, 1, 1, 0],
-                                                {
-                                                    extrapolateLeft: 'clamp',
-                                                    extrapolateRight: 'clamp',
-                                                    easing: Easing.ease
-                                                }
-                                            ),
-                                            // Chalk texture effect
-                                            filter: 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.4))',
-                                            letterSpacing: '4px',
-                                            lineHeight: 1.3,
-                                            maxWidth: '85%',
-                                            wordWrap: 'break-word',
-                                            // Rotate text 30 degrees for dynamic effect
-                                            transform: 'rotate(-5deg)',
-                                            transformOrigin: 'center center',
+                                          display: 'flex',
+                                          justifyContent: 'center',
+                                          alignItems: 'flex-start',
+                                          paddingTop: '33.33%', // 1/3 from top
+                                          pointerEvents: 'none',
                                         }}
-                                    >
-                                        {scene.title}
-                                    </div>
-                                </AbsoluteFill>
+                                      >
+                                        <div
+                                          style={{
+                                            width: '100%',
+                                            aspectRatio: '16/9',
+                                            position: 'relative',
+                                            overflow: 'visible', // Changed to visible to show glow effects
+                                            borderRadius: '12px',
+                                            boxShadow: '0 8px 40px rgba(0, 0, 0, 0.8), 0 0 60px rgba(255, 255, 255, 0.1)',
+                                            border: '2px solid rgba(255, 255, 255, 0.2)',
+                                          }}
+                                        >
+                                          {openingImages.map((imageSrc, imgIndex) => {
+                                            const imageStartFrame = delayFrames + imgIndex * imageDuration;
+                                            const imageEndFrame = delayFrames + (imgIndex + 1) * imageDuration;
+                                            const imageMidFrame = (imageStartFrame + imageEndFrame) / 2;
+                                            
+                                            // Calculate opacity with more dramatic fade
+                                            const opacity = interpolate(
+                                              frame,
+                                              [
+                                                imageStartFrame,
+                                                imageStartFrame + fadeFrames * 0.5,
+                                                imageEndFrame - fadeFrames * 0.5,
+                                                imageEndFrame
+                                              ],
+                                              [0, 1, 1, 0],
+                                              {
+                                                extrapolateLeft: 'clamp',
+                                                extrapolateRight: 'clamp',
+                                                easing: Easing.out(Easing.cubic) // More dramatic easing
+                                              }
+                                            );
+                                            
+                                            // Dramatic zoom in effect: start from 1.3x, zoom to 1.0x, then back to 1.1x
+                                            const zoomInFrames = fps * 0.4; // Fast zoom in
+                                            const scale = interpolate(
+                                              frame,
+                                              [
+                                                imageStartFrame,
+                                                imageStartFrame + zoomInFrames,
+                                                imageMidFrame,
+                                                imageEndFrame - fadeFrames,
+                                                imageEndFrame
+                                              ],
+                                              [1.3, 1.0, 1.0, 1.05, 1.1],
+                                              {
+                                                extrapolateLeft: 'clamp',
+                                                extrapolateRight: 'clamp',
+                                                easing: Easing.out(Easing.back(1.5)) // Bounce effect
+                                              }
+                                            );
+                                            
+                                            // Subtle rotation for dramatic effect
+                                            const rotation = interpolate(
+                                              frame,
+                                              [
+                                                imageStartFrame,
+                                                imageStartFrame + zoomInFrames,
+                                                imageEndFrame
+                                              ],
+                                              [5, 0, -2], // Start slightly rotated, then straighten
+                                              {
+                                                extrapolateLeft: 'clamp',
+                                                extrapolateRight: 'clamp',
+                                                easing: Easing.out(Easing.cubic)
+                                              }
+                                            );
+                                            
+                                            // Glow intensity for dramatic entrance
+                                            const glowIntensity = interpolate(
+                                              frame,
+                                              [
+                                                imageStartFrame,
+                                                imageStartFrame + zoomInFrames,
+                                                imageEndFrame - fadeFrames,
+                                                imageEndFrame
+                                              ],
+                                              [1.5, 0.3, 0.3, 0],
+                                              {
+                                                extrapolateLeft: 'clamp',
+                                                extrapolateRight: 'clamp',
+                                                easing: Easing.out(Easing.cubic)
+                                              }
+                                            );
+                                            
+                                            // Determine image source: Base64 or file path
+                                            const imgSrc = scene.openingImageFiles 
+                                              ? getImageSrc(imageSrc) // File path
+                                              : `data:image/png;base64,${imageSrc}`; // Base64
+                                            
+                                            return (
+                                              <Img
+                                                key={imgIndex}
+                                                src={imgSrc}
+                                                style={{
+                                                  position: 'absolute',
+                                                  top: 0,
+                                                  left: 0,
+                                                  width: '100%',
+                                                  height: '100%',
+                                                  objectFit: 'cover',
+                                                  opacity: opacity,
+                                                  transform: `scale(${scale}) rotate(${rotation}deg)`,
+                                                  transformOrigin: 'center center',
+                                                  filter: `drop-shadow(0 0 ${20 * glowIntensity}px rgba(255, 255, 255, ${0.6 * glowIntensity})) drop-shadow(0 0 ${40 * glowIntensity}px rgba(255, 255, 255, ${0.4 * glowIntensity}))`,
+                                                  transition: 'all 0.1s ease-out',
+                                                }}
+                                              />
+                                            );
+                                          })}
+                                        </div>
+                                      </AbsoluteFill>
+                                      
+                                      {/* Click sound effects at transitions */}
+                                      {openingImages.map((_, imgIndex) => {
+                                        if (imgIndex === 0) return null; // Skip first image (no transition before it)
+                                        const transitionFrame = delayFrames + imgIndex * imageDuration;
+                                        
+                                        return (
+                                          <Sequence
+                                            key={`click-${imgIndex}`}
+                                            from={transitionFrame}
+                                            durationInFrames={1}
+                                          >
+                                            <Audio
+                                              src={staticFile("click.wav")}
+                                              volume={1}
+                                            />
+                                          </Sequence>
+                                        );
+                                      })}
+                                    </>
+                                  );
+                                })()}
                             </>
+                        ) : index === 1 && (scene.sceneVideoData || scene.sceneVideoFile) ? (
+                            // Scene 2: Show video first (5 seconds), then image
+                            (() => {
+                              const videoDuration = fps * 5; // 5 seconds video
+                              const isVideoPhase = frame < videoDuration;
+                              const imagePhaseFrame = frame - videoDuration; // Frame relative to image phase start
+                              const imagePhaseDuration = durationFrames - videoDuration; // Duration of image phase
+                              
+                              // Ken Burns effect for image phase only
+                              const imageKenBurnsScale = interpolate(
+                                imagePhaseFrame,
+                                [0, imagePhaseDuration],
+                                [1, 1.08],
+                                {
+                                  extrapolateLeft: 'clamp',
+                                  extrapolateRight: 'clamp',
+                                  easing: Easing.ease
+                                }
+                              );
+                              
+                              const videoSrc = scene.sceneVideoFile 
+                                ? getVideoSrc(scene.sceneVideoFile)
+                                : `data:video/mp4;base64,${scene.sceneVideoData}`;
+                              
+                              return (
+                                <>
+                                  {/* Video phase: 0-5 seconds */}
+                                  {isVideoPhase && (
+                                    <Video 
+                                      src={videoSrc}
+                                      style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover',
+                                        position: 'absolute',
+                                        top: 0
+                                      }}
+                                    />
+                                  )}
+                                  
+                                  {/* Image phase: after 5 seconds */}
+                                  {!isVideoPhase && (
+                                    <>
+                                      {scene.imageFile ? (
+                                        <Img 
+                                          src={getImageSrc(scene.imageFile)}
+                                          style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'cover',
+                                            position: 'absolute',
+                                            top: 0,
+                                            transform: `scale(${imageKenBurnsScale})`,
+                                            transformOrigin: 'center center'
+                                          }}
+                                        />
+                                      ) : scene.imageData ? (
+                                        <Img 
+                                          src={`data:image/png;base64,${scene.imageData}`} 
+                                          style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'cover',
+                                            position: 'absolute',
+                                            top: 0,
+                                            transform: `scale(${imageKenBurnsScale})`,
+                                            transformOrigin: 'center center'
+                                          }}
+                                        />
+                                      ) : null}
+                                    </>
+                                  )}
+                                </>
+                              );
+                            })()
                         ) : scene.videoFile ? (
                             // Use video file path if available (for exported projects)
                             <Video 
